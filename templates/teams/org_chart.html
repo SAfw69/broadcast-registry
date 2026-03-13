@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}Org Chart – Broadcast Registry{% endblock %}
+{% block extra_css %}
+<style>
+  .node circle { fill: #0d3b7a; stroke: #fff; stroke-width: 3px; cursor: pointer; transition: all 0.2s; }
+  .node circle:hover { fill: #e8451e; r: 14px; }
+  .node text { font-size: 12px; fill: #333; font-family: 'Segoe UI', sans-serif; }
+  .link { fill: none; stroke: #aac2ef; stroke-width: 2px; }
+  .tooltip-d3 { position: absolute; background: #0d3b7a; color: #fff; border-radius: 8px; padding: 10px 14px; font-size: 13px; pointer-events: none; opacity: 0; transition: 0.2s; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  #chart-container { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-0">Organisation Chart</h2>
+    <p class="text-muted">Team structure and dependencies visualisation</p>
+  </div>
+  <div>
+    <button id="btnReset" class="btn btn-outline-secondary btn-sm me-2"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset</button>
+    <a href="{% url 'team_list' %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-list me-1"></i>List View</a>
+  </div>
+</div>
+
+<!-- Department filter -->
+<div class="card p-3 mb-4">
+  <div class="d-flex gap-2 flex-wrap">
+    <button class="btn btn-sm btn-primary dept-filter active" data-dept="all">All Departments</button>
+    {% for dept in departments %}
+    <button class="btn btn-sm btn-outline-primary dept-filter" data-dept="{{ dept.name }}">{{ dept.name }}</button>
+    {% endfor %}
+  </div>
+</div>
+
+<div id="chart-container" style="height: 600px; position: relative;">
+  <div class="tooltip-d3" id="tooltip"></div>
+  <svg id="org-chart" width="100%" height="100%"></svg>
+</div>
+
+<!-- Legend -->
+<div class="card p-3 mt-3">
+  <div class="d-flex gap-4 flex-wrap align-items-center">
+    <span class="fw-semibold small">Legend:</span>
+    <span><svg width="16" height="16"><circle cx="8" cy="8" r="7" fill="#0d3b7a"/></svg> <small>Active Team</small></span>
+    <span><svg width="30" height="10"><line x1="0" y1="5" x2="30" y2="5" stroke="#aac2ef" stroke-width="2"/></svg> <small>Dependency</small></span>
+    <span><small class="text-muted">Hover over nodes for details · Scroll to zoom · Drag to pan</small></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const nodes = {{ nodes_json|safe }};
+const edges = {{ edges_json|safe }};
+
+const svg = d3.select('#org-chart');
+const container = document.getElementById('chart-container');
+const W = container.clientWidth, H = container.clientHeight;
+const tooltip = document.getElementById('tooltip');
+
+const g = svg.append('g');
+
+// Zoom & Pan
+const zoom = d3.zoom().scaleExtent([0.3, 3]).on('zoom', e => g.attr('transform', e.transform));
+svg.call(zoom);
+
+// Color by department
+const depts = [...new Set(nodes.map(n => n.department))];
+const color = d3.scaleOrdinal(d3.schemeTableau10).domain(depts);
+
+// Force simulation
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(edges).id(d => d.id).distance(140))
+  .force('charge', d3.forceManyBody().strength(-400))
+  .force('center', d3.forceCenter(W / 2, H / 2))
+  .force('collision', d3.forceCollide().radius(60));
+
+// Draw links
+const link = g.append('g').selectAll('line')
+  .data(edges).join('line')
+  .attr('class', 'link')
+  .attr('marker-end', 'url(#arrow)');
+
+// Arrow marker
+svg.append('defs').append('marker')
+  .attr('id', 'arrow').attr('viewBox', '0 -5 10 10')
+  .attr('refX', 22).attr('refY', 0)
+  .attr('markerWidth', 8).attr('markerHeight', 8)
+  .attr('orient', 'auto')
+  .append('path').attr('d', 'M0,-5L10,0L0,5').attr('fill', '#aac2ef');
+
+// Draw nodes
+const node = g.append('g').selectAll('g')
+  .data(nodes).join('g')
+  .call(d3.drag()
+    .on('start', (e, d) => { if (!e.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+    .on('end', (e, d) => { if (!e.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; })
+  )
+  .on('mouseover', (e, d) => {
+    tooltip.style.opacity = '1';
+    tooltip.style.left = (e.offsetX + 15) + 'px';
+    tooltip.style.top = (e.offsetY - 10) + 'px';
+    tooltip.innerHTML = `<strong>${d.name}</strong><br><small>${d.department}</small><br>Manager: ${d.manager}<br>Members: ${d.member_count}`;
+  })
+  .on('mouseout', () => tooltip.style.opacity = '0')
+  .on('click', (e, d) => window.location.href = `/teams/${d.id}/`);
+
+node.append('circle').attr('r', 18).attr('fill', d => color(d.department));
+node.append('text').attr('dy', 30).attr('text-anchor', 'middle').text(d => d.name.length > 14 ? d.name.slice(0,12) + '…' : d.name).attr('font-size', '11px');
+node.append('text').attr('dy', -24).attr('text-anchor', 'middle').text(d => d.member_count + '👤').attr('font-size', '10px').attr('fill', '#888');
+
+simulation.on('tick', () => {
+  link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+      .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+  node.attr('transform', d => `translate(${d.x},${d.y})`);
+});
+
+// Dept filter
+let activeDept = 'all';
+document.querySelectorAll('.dept-filter').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.dept-filter').forEach(b => b.classList.remove('active', 'btn-primary'));
+    document.querySelectorAll('.dept-filter').forEach(b => b.classList.add('btn-outline-primary'));
+    this.classList.add('active', 'btn-primary');
+    this.classList.remove('btn-outline-primary');
+    activeDept = this.dataset.dept;
+    node.style('opacity', d => activeDept === 'all' || d.department === activeDept ? 1 : 0.15);
+    link.style('opacity', d => activeDept === 'all' || (d.source.department === activeDept || d.target.department === activeDept) ? 1 : 0.1);
+  });
+});
+
+document.getElementById('btnReset').addEventListener('click', () => {
+  svg.transition().call(zoom.transform, d3.zoomIdentity);
+});
+</script>
+{% endblock %}

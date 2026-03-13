@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Search Results – Broadcast Registry{% endblock %}
+
+{% block extra_css %}
+<style>
+  .search-header { animation: fadeInUp 0.5s ease-out; }
+  .search-card {
+    transition: all var(--bc-transition);
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  .search-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 36px rgba(12, 45, 87, 0.12);
+    border-color: rgba(12, 45, 87, 0.1);
+  }
+  .search-empty {
+    animation: fadeInScale 0.6s ease-out;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-header mb-4">
+  <h2 class="fw-bold mb-1">Search Results</h2>
+  <p class="text-muted">Results for: <strong>"{{ query }}"</strong></p>
+</div>
+
+{% if teams %}
+<h5 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+  <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#e8f0fe,#d2e3fc);color:var(--bc-blue);display:inline-flex;align-items:center;justify-content:center;">
+    <i class="bi bi-people"></i>
+  </span>
+  Teams ({{ teams|length }})
+</h5>
+<div class="row g-3 mb-4">
+  {% for team in teams %}
+  <div class="col-md-6">
+    <a href="{% url 'team_detail' team.pk %}" class="text-decoration-none">
+      <div class="card search-card p-3">
+        <div class="d-flex align-items-center gap-3">
+          <div class="member-avatar" style="width:44px;height:44px;font-size:1rem;">{{ team.name|first }}</div>
+          <div>
+            <div class="fw-bold text-dark">{{ team.name }}</div>
+            <span class="dep-badge">{{ team.department.name }}</span>
+          </div>
+          <span class="ms-auto badge {% if team.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}" style="border-radius:20px;padding:5px 12px;">{{ team.get_status_display }}</span>
+        </div>
+        {% if team.description %}<p class="text-muted small mt-2 mb-0">{{ team.description|truncatechars:100 }}</p>{% endif %}
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if departments %}
+<h5 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+  <span style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#fef3c7,#fde68a);color:#d97706;display:inline-flex;align-items:center;justify-content:center;">
+    <i class="bi bi-building"></i>
+  </span>
+  Departments ({{ departments|length }})
+</h5>
+<div class="row g-3 mb-4">
+  {% for dept in departments %}
+  <div class="col-md-4">
+    <a href="{% url 'department_detail' dept.pk %}" class="text-decoration-none">
+      <div class="card search-card p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--bc-blue),var(--bc-blue-light));color:#fff;display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-building"></i>
+          </div>
+          <div>
+            <div class="fw-bold text-dark">{{ dept.name }}</div>
+            <div class="text-muted small">{{ dept.teams.count }} team{{ dept.teams.count|pluralize }}</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if not teams and not departments %}
+<div class="text-center py-5 search-empty">
+  <div style="animation: float 4s ease-in-out infinite;">
+    <i class="bi bi-search fs-1 text-muted"></i>
+  </div>
+  <p class="text-muted mt-3">No results found for "{{ query }}". Try a different search term.</p>
+  <a href="{% url 'team_list' %}" class="btn btn-outline-primary"><i class="bi bi-arrow-right me-1"></i>Browse All Teams</a>
+</div>
+{% endif %}
+{% endblock %}

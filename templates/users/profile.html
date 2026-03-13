@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}My Profile – Broadcast Registry{% endblock %}
+
+{% block extra_css %}
+<style>
+  .profile-card { animation: fadeInScale 0.6s ease-out; }
+  .profile-avatar {
+    width: 80px; height: 80px;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--bc-blue), var(--bc-blue-light));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.8rem;
+    box-shadow: 0 8px 24px rgba(12,45,87,0.2);
+    transition: all 0.4s ease;
+    animation: float 5s ease-in-out infinite;
+  }
+  .profile-avatar:hover { transform: scale(1.08) rotate(3deg); }
+  .teams-section { animation: fadeInUp 0.6s ease-out 0.2s both; }
+  .team-membership-item {
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+    border-radius: 12px !important;
+  }
+  .team-membership-item:hover {
+    background: linear-gradient(135deg, #f0f4ff, #e8f0fe) !important;
+    border-color: rgba(12, 45, 87, 0.08);
+    transform: translateX(6px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card profile-card p-4">
+      <div class="d-flex align-items-center mb-4 gap-3">
+        <div class="profile-avatar">
+          {{ user.first_name|first }}{{ user.last_name|first }}
+        </div>
+        <div>
+          <h4 class="fw-bold mb-0">{{ user.get_full_name }}</h4>
+          <div class="text-muted">@{{ user.username }}</div>
+          {% if user.is_staff %}<span class="badge bg-warning text-dark" style="border-radius:20px;">Admin</span>{% endif %}
+        </div>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Changes</button>
+          <a href="{% url 'change_password' %}" class="btn btn-outline-secondary"><i class="bi bi-key me-1"></i>Change Password</a>
+        </div>
+      </form>
+    </div>
+
+    {% if user.team_memberships.all %}
+    <div class="card p-4 mt-4 teams-section">
+      <h5 class="fw-bold mb-3 d-flex align-items-center gap-2">
+        <span style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#059669;display:inline-flex;align-items:center;justify-content:center;">
+          <i class="bi bi-people"></i>
+        </span>
+        My Teams
+      </h5>
+      {% for membership in user.team_memberships.all %}
+      <a href="{% url 'team_detail' membership.team.pk %}" class="team-membership-item text-decoration-none d-flex align-items-center p-3 mb-2" style="background:#f8f9fb; border-radius:12px;">
+        <div class="member-avatar me-3" style="width:44px;height:44px;font-size:1rem;">{{ membership.team.name|first }}</div>
+        <div>
+          <div class="fw-semibold text-dark small">{{ membership.team.name }}</div>
+          <div class="text-muted" style="font-size:0.75rem">{{ membership.get_role_display }} · {{ membership.team.department }}</div>
+        </div>
+        <i class="bi bi-chevron-right text-muted ms-auto"></i>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+{% block title %}Teams – Broadcast Registry{% endblock %}
+
+{% block extra_css %}
+<style>
+  .filter-bar {
+    animation: slideDown 0.5s ease-out;
+    border: 1px solid rgba(255,255,255,0.5);
+  }
+  .team-grid-card {
+    transition: all var(--bc-transition);
+    border: 1px solid rgba(255,255,255,0.5);
+    overflow: hidden;
+    position: relative;
+  }
+  .team-grid-card::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(12,45,87,0.03), rgba(26,74,138,0.05));
+    transition: transform 0.5s ease;
+  }
+  .team-grid-card:hover::before { transform: scale(1.8); }
+  .team-grid-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(12, 45, 87, 0.14);
+    border-color: rgba(12, 45, 87, 0.1);
+  }
+  .team-avatar-lg {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--bc-blue), var(--bc-blue-light));
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(12, 45, 87, 0.2);
+    transition: all 0.3s ease;
+  }
+  .team-grid-card:hover .team-avatar-lg { transform: rotate(5deg) scale(1.05); }
+  .team-meta-icon {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 animate-on-scroll">
+  <div>
+    <h2 class="fw-bold mb-0">Engineering Teams</h2>
+    <p class="text-muted mb-0">{{ teams|length }} team{{ teams|length|pluralize }} found</p>
+  </div>
+  <a href="{% url 'team_create' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Add Team</a>
+</div>
+
+<!-- Filters -->
+<div class="card filter-bar p-3 mb-4">
+  <form method="get" class="row g-2 align-items-end">
+    <div class="col-md-4">
+      <label class="form-label small fw-semibold">Search</label>
+      <input type="text" name="q" class="form-control" placeholder="Name, description, manager..." value="{{ query }}">
+    </div>
+    <div class="col-md-3">
+      <label class="form-label small fw-semibold">Department</label>
+      <select name="dept" class="form-select">
+        <option value="">All Departments</option>
+        {% for dept in departments %}
+        <option value="{{ dept.id }}" {% if dept_filter == dept.id|stringformat:'s' %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-semibold">Status</label>
+      <select name="status" class="form-select">
+        <option value="">All</option>
+        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+        <option value="restructured" {% if status_filter == 'restructured' %}selected{% endif %}>Restructured</option>
+        <option value="disbanded" {% if status_filter == 'disbanded' %}selected{% endif %}>Disbanded</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label small fw-semibold">View</label>
+      <select name="view" class="form-select">
+        <option value="grid" {% if view_mode == 'grid' %}selected{% endif %}>Grid</option>
+        <option value="list" {% if view_mode == 'list' %}selected{% endif %}>List</option>
+      </select>
+    </div>
+    <div class="col-md-1">
+      <button class="btn btn-primary w-100" type="submit"><i class="bi bi-search"></i></button>
+    </div>
+  </form>
+</div>
+
+{% if view_mode == 'grid' %}
+<div class="row g-4">
+  {% for team in teams %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card team-grid-card h-100 p-4">
+      <div class="d-flex justify-content-between align-items-start mb-3" style="position:relative;z-index:1;">
+        <div class="team-avatar-lg">{{ team.name|first }}</div>
+        <span class="badge {% if team.status == 'active' %}bg-success{% elif team.status == 'disbanded' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="border-radius:20px;padding:5px 12px;">
+          {{ team.get_status_display }}
+        </span>
+      </div>
+      <h5 class="fw-bold mb-1" style="position:relative;z-index:1;">{{ team.name }}</h5>
+      <span class="dep-badge mb-2 d-inline-block">{{ team.department.name }}</span>
+      <p class="text-muted small mb-3" style="position:relative;z-index:1;">{{ team.description|truncatechars:100 }}</p>
+      <div class="d-flex gap-3 text-muted small mb-3" style="position:relative;z-index:1;">
+        <span class="d-flex align-items-center gap-1">
+          <span class="team-meta-icon" style="background:#e8f0fe;color:var(--bc-blue);"><i class="bi bi-person"></i></span>
+          {{ team.manager.get_full_name|default:'No manager' }}
+        </span>
+        <span class="d-flex align-items-center gap-1">
+          <span class="team-meta-icon" style="background:#d1fae5;color:#059669;"><i class="bi bi-people"></i></span>
+          {{ team.members.count }} members
+        </span>
+      </div>
+      {% if team.slack_channel %}
+      <div class="text-muted small mb-3" style="position:relative;z-index:1;"><i class="bi bi-slack me-1"></i>{{ team.slack_channel }}</div>
+      {% endif %}
+      <a href="{% url 'team_detail' team.pk %}" class="btn btn-outline-primary btn-sm mt-auto" style="position:relative;z-index:1;">
+        <i class="bi bi-arrow-right me-1"></i>View Details
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div class="col-12 text-center py-5">
+    <div style="animation: float 4s ease-in-out infinite;">
+      <i class="bi bi-people fs-1 text-muted"></i>
+    </div>
+    <p class="text-muted mt-3">No teams found. <a href="{% url 'team_create' %}">Create the first team</a>.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- List View -->
+<div class="card" style="border:1px solid rgba(255,255,255,0.5);">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Team</th><th>Department</th><th>Manager</th><th>Members</th><th>Status</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for team in teams %}
+        <tr>
+          <td class="fw-semibold">
+            <div class="d-flex align-items-center gap-2">
+              <div class="member-avatar" style="width:32px;height:32px;font-size:0.75rem;">{{ team.name|first }}</div>
+              {{ team.name }}
+            </div>
+          </td>
+          <td><span class="dep-badge">{{ team.department.name }}</span></td>
+          <td>{{ team.manager.get_full_name|default:'—' }}</td>
+          <td><span class="badge bg-primary bg-opacity-10 text-primary" style="border-radius:20px;">{{ team.members.count }}</span></td>
+          <td><span class="badge {% if team.status == 'active' %}bg-success{% elif team.status == 'disbanded' %}bg-danger{% else %}bg-warning text-dark{% endif %}" style="border-radius:20px;">{{ team.get_status_display }}</span></td>
+          <td><a href="{% url 'team_detail' team.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-right"></i></a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No teams found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

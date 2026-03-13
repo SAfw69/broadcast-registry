@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Add Member – {{ team.name }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5">
+    <a href="{% url 'team_detail' team.pk %}" class="text-muted text-decoration-none small"><i class="bi bi-arrow-left me-1"></i>Back to {{ team.name }}</a>
+    <h3 class="fw-bold mt-2 mb-4">Add Member to {{ team.name }}</h3>
+    <div class="card p-4">
+      <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">{{ field.label }}</label>
+          {{ field }}
+          {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary w-100">Add Member</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

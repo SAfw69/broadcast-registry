@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Login – Broadcast Registry{% endblock %}
+
+{% block extra_css %}
+<style>
+  .login-wrapper {
+    min-height: calc(100vh - 220px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    animation: fadeInScale 0.6s ease-out;
+    border: 1px solid rgba(255,255,255,0.5);
+    overflow: hidden;
+    position: relative;
+  }
+  .login-card::before {
+    content: '';
+    position: absolute; top: -100px; right: -100px;
+    width: 250px; height: 250px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(12,45,87,0.04), rgba(26,74,138,0.06));
+    animation: float 8s ease-in-out infinite;
+  }
+  .login-card::after {
+    content: '';
+    position: absolute; bottom: -80px; left: -80px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(232,69,30,0.03), rgba(255,107,61,0.05));
+    animation: float 6s ease-in-out infinite reverse;
+  }
+  .login-icon {
+    width: 72px; height: 72px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, var(--bc-blue), var(--bc-blue-light));
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+    box-shadow: 0 8px 24px rgba(12,45,87,0.2);
+    animation: float 4s ease-in-out infinite;
+  }
+  .login-icon i { color: #fff; font-size: 1.8rem; }
+  .login-btn {
+    background: linear-gradient(135deg, var(--bc-blue), var(--bc-blue-light));
+    border: none;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-btn::after {
+    content: '';
+    position: absolute; top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.5s ease;
+  }
+  .login-btn:hover::after { left: 100%; }
+  .login-btn:hover {
+    box-shadow: 0 8px 24px rgba(12,45,87,0.3);
+    transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+  <div class="col-md-5 col-lg-4">
+    <div class="card login-card p-5 shadow">
+      <div class="text-center mb-4" style="position:relative;z-index:1;">
+        <div class="login-icon">
+          <i class="bi bi-broadcast-pin"></i>
+        </div>
+        <h3 class="fw-bold mt-3">Welcome Back</h3>
+        <p class="text-muted">Sign in to the Engineering Registry</p>
+      </div>
+      <form method="post" style="position:relative;z-index:1;">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">{{ field.label }}</label>
+          <input type="{{ field.field.widget.input_type }}" name="{{ field.html_name }}" class="form-control {% if field.errors %}is-invalid{% endif %}" {% if field.value %}value="{{ field.value }}"{% endif %} placeholder="{{ field.label }}">
+          {% for error in field.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary login-btn w-100 fw-bold py-2 mt-2">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </button>
+      </form>
+      <hr style="position:relative;z-index:1;">
+      <p class="text-center mb-0 small" style="position:relative;z-index:1;">Don't have an account? <a href="{% url 'register' %}" class="fw-semibold">Register here</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

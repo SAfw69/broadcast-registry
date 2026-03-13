@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Audit Log{% endblock %}
+
+{% block extra_css %}
+<style>
+  .audit-header { animation: fadeInUp 0.5s ease-out; }
+  .audit-card {
+    border: 1px solid rgba(255,255,255,0.5);
+    animation: fadeInScale 0.5s ease-out 0.1s both;
+    overflow: hidden;
+  }
+  .action-badge {
+    border-radius: 20px !important;
+    padding: 5px 12px !important;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="audit-header d-flex align-items-center gap-3 mb-4">
+  <span style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--bc-blue),var(--bc-blue-light));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 4px 12px rgba(12,45,87,0.2);">
+    <i class="bi bi-clock-history"></i>
+  </span>
+  <div>
+    <h2 class="fw-bold mb-0">Audit Log</h2>
+    <p class="text-muted mb-0 small">Track all changes across the registry</p>
+  </div>
+</div>
+
+<div class="card audit-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr><th>Timestamp</th><th>User</th><th>Action</th><th>Object</th><th>Changes</th><th>IP</th></tr>
+      </thead>
+      <tbody>
+        {% for log in logs %}
+        <tr>
+          <td class="text-muted small">{{ log.timestamp|date:"d M Y H:i" }}</td>
+          <td>
+            <div class="d-flex align-items-center gap-2">
+              <div class="member-avatar" style="width:28px;height:28px;font-size:0.65rem;">{{ log.user.username|first|upper }}</div>
+              {{ log.user.username|default:'System' }}
+            </div>
+          </td>
+          <td>
+            <span class="badge action-badge {% if log.action == 'create' %}bg-success{% elif log.action == 'delete' %}bg-danger{% else %}bg-primary{% endif %}">
+              {% if log.action == 'create' %}<i class="bi bi-plus-circle me-1"></i>{% elif log.action == 'delete' %}<i class="bi bi-trash me-1"></i>{% else %}<i class="bi bi-pencil me-1"></i>{% endif %}
+              {{ log.get_action_display }}
+            </span>
+          </td>
+          <td class="small">{{ log.model_name }}: {{ log.object_repr|truncatechars:40 }}</td>
+          <td class="small text-muted">{{ log.changes|truncatechars:60 }}</td>
+          <td class="small text-muted"><code style="font-size:0.75rem;background:#f1f5f9;padding:2px 6px;border-radius:4px;">{{ log.ip_address }}</code></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center py-5">
+            <div style="animation: float 4s ease-in-out infinite;">
+              <i class="bi bi-clock-history fs-1 text-muted"></i>
+            </div>
+            <p class="text-muted mt-2">No audit records yet.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
