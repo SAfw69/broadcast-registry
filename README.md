@@ -1,4 +1,4 @@
-# Broadcast Company Engineering Team Registry
+# Global Engineering Registry Portal
 
 **About this project:**
 A Django web application designed to help organizations manage and visualize their engineering teams, departments, and technical dependencies.
@@ -12,21 +12,24 @@ A Django web application designed to help organizations manage and visualize the
 
 ---
 
-## Quick Start (3 commands)
+### Deployment (Go Live)
 
+This project is prepared for production deployment using **Gunicorn** and **WhiteNoise**.
+
+#### 1. Environment Variables
+Create a `.env` file in the root directory (based on `.env.example`) with the following:
+- `SECRET_KEY`: A strong, unique key.
+- `DEBUG`: `False` for production.
+- `ALLOWED_HOSTS`: Comma-separated list of your domain/IP.
+
+#### 2. Static Files
+The app uses WhiteNoise to serve static files. Run:
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Set up database & seed sample data
-python manage.py migrate
-python manage.py seed_data
-
-# 3. Run the server
-python manage.py runserver
+python manage.py collectstatic
 ```
 
-Then open **http://127.0.0.1:8000**
+#### 3. Recommended Platforms
+- **Railway/Render**: Both will automatically detect the `Procfile` and `requirements.txt`. Simply connect your GitHub repo and set the environment variables.
 
 ---
 
