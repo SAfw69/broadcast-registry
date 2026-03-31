@@ -40,11 +40,10 @@ class TeamForm(forms.ModelForm):
 class TeamMemberForm(forms.ModelForm):
     class Meta:
         model = TeamMember
-        fields = ['user', 'role', 'joined_at']
+        fields = ['user', 'join_date']
         widgets = {
             'user': forms.Select(attrs={'class': 'form-select'}),
-            'role': forms.Select(attrs={'class': 'form-select'}),
-            'joined_at': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'join_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
 

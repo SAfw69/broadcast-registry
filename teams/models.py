@@ -38,7 +38,9 @@ class Team(models.Model):
     email = models.EmailField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     upstream_dependencies = models.ManyToManyField(
-        'self', symmetrical=False,
+        'self', through='Dependency',
+        through_fields=('to_team', 'from_team'),
+        symmetrical=False,
         related_name='downstream_dependents',
         blank=True
     )
@@ -54,27 +56,16 @@ class Team(models.Model):
 
 
 class TeamMember(models.Model):
-    ROLE_CHOICES = [
-        ('engineer', 'Software Engineer'),
-        ('senior_engineer', 'Senior Engineer'),
-        ('lead', 'Tech Lead'),
-        ('architect', 'Architect'),
-        ('qa', 'QA Engineer'),
-        ('devops', 'DevOps Engineer'),
-        ('other', 'Other'),
-    ]
-
     team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='members')
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='team_memberships'
     )
-    role = models.CharField(max_length=30, choices=ROLE_CHOICES, default='engineer')
-    joined_at = models.DateField(default=timezone.now)
+    join_date = models.DateField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.user.get_full_name()} - {self.team.name} ({self.get_role_display()})"
+        return f"{self.user.get_full_name()} - {self.team.name}"
 
     class Meta:
         unique_together = ['team', 'user']
@@ -118,3 +109,37 @@ class AuditLog(models.Model):
 
     class Meta:
         ordering = ['-timestamp']
+
+
+class Dependency(models.Model):
+    from_team = models.ForeignKey(Team, related_name='outgoing_dependencies', on_delete=models.CASCADE)
+    to_team = models.ForeignKey(Team, related_name='incoming_dependencies', on_delete=models.CASCADE)
+    DEPENDENCY_TYPES = [
+        ('upstream', 'Upstream'),
+        ('downstream', 'Downstream')
+    ]
+    dependency_type = models.CharField(max_length=20, choices=DEPENDENCY_TYPES)
+
+    def __str__(self):
+        return f"{self.from_team} -> {self.to_team} ({self.dependency_type})"
+
+
+class Meeting(models.Model):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='meetings')
+    organiser = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    meeting_date = models.DateField()
+    meeting_time = models.TimeField()
+    description = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"Meeting for {self.team.name} on {self.meeting_date}"
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    receiver_team = models.ForeignKey(Team, on_delete=models.CASCADE, related_name='messages')
+    message_content = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.sender} to {self.receiver_team}"
