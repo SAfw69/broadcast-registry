@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}{{ team.name }} – Broadcast Registry{% endblock %}
+{% block title %}{{ team.name }} – Global Engineering Registry Portal{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -131,8 +131,8 @@
                   </div>
                 </div>
               </td>
-              <td><span class="badge bg-secondary bg-opacity-10 text-secondary" style="border-radius:20px;">{{ member.get_role_display }}</span></td>
-              <td class="text-muted small">{{ member.joined_at }}</td>
+              <td><span class="badge bg-secondary bg-opacity-10 text-secondary" style="border-radius:20px;">{{ member.user.get_role_display }}</span></td>
+              <td class="text-muted small">{{ member.join_date }}</td>
               <td>
                 <form method="post" action="{% url 'remove_member' team.pk member.pk %}" style="display:inline">
                   {% csrf_token %}

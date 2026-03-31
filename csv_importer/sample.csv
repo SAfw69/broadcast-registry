@@ -1,0 +1,4 @@
+department_name,department_description,team_name,team_description,mission,slack_channel,email,status
+Cloud Infrastructure,Manages all cloud resources,AWS Compute,Manages EC2 instances,Ensure 99.9% uptime,#aws-compute,aws@example.com,active
+Cloud Infrastructure,Manages all cloud resources,AWS Storage,Manages S3 and EBS,Reliable storage solutions,#aws-storage,storage@example.com,active
+Security,Corporate and product security,AppSec,Application Security,Secure all applications,#appsec,appsec@example.com,active

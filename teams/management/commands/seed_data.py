@@ -222,7 +222,7 @@ class Command(BaseCommand):
             for username, role in members_info:
                 TeamMember.objects.get_or_create(
                     team=team, user=users[username],
-                    defaults={'role': role, 'joined_at': datetime.date(2023, 1, 15)}
+                    defaults={'join_date': datetime.date(2023, 1, 15)}
                 )
 
         add_members(team_cdn, [

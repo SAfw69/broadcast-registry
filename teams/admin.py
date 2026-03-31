@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Department, Team, TeamMember, Repository, AuditLog
+from .models import Department, Team, TeamMember, Repository, AuditLog, Dependency, Meeting, Message
 
 
 class TeamMemberInline(admin.TabularInline):
     model = TeamMember
     extra = 1
-    fields = ['user', 'role', 'joined_at']
+    fields = ['user', 'join_date']
 
 
 class RepositoryInline(admin.TabularInline):
@@ -30,7 +30,6 @@ class TeamAdmin(admin.ModelAdmin):
     list_display = ['name', 'department', 'manager', 'status', 'member_count', 'updated_at']
     list_filter = ['status', 'department']
     search_fields = ['name', 'description', 'department__name']
-    filter_horizontal = ['upstream_dependencies']
     inlines = [TeamMemberInline, RepositoryInline]
     readonly_fields = ['created_at', 'updated_at']
 
@@ -43,9 +42,6 @@ class TeamAdmin(admin.ModelAdmin):
         }),
         ('Contact', {
             'fields': ('slack_channel', 'email')
-        }),
-        ('Dependencies', {
-            'fields': ('upstream_dependencies',)
         }),
         ('Timestamps', {
             'fields': ('created_at', 'updated_at'),
@@ -62,8 +58,8 @@ class TeamAdmin(admin.ModelAdmin):
 
 @admin.register(TeamMember)
 class TeamMemberAdmin(admin.ModelAdmin):
-    list_display = ['user', 'team', 'role', 'joined_at']
-    list_filter = ['role', 'team__department']
+    list_display = ['user', 'team', 'join_date']
+    list_filter = ['team__department']
     search_fields = ['user__username', 'user__first_name', 'team__name']
 
 
@@ -88,3 +84,18 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Dependency)
+class DependencyAdmin(admin.ModelAdmin):
+    list_display = ['from_team', 'to_team', 'dependency_type']
+
+
+@admin.register(Meeting)
+class MeetingAdmin(admin.ModelAdmin):
+    list_display = ['team', 'organiser', 'meeting_date', 'meeting_time']
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['sender', 'receiver_team', 'timestamp']
